@@ -3,11 +3,11 @@ package ru.javawebinar.topjava.util;
 import ru.javawebinar.topjava.model.UserMeal;
 import ru.javawebinar.topjava.model.UserMealWithExceed;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * GKislin
@@ -29,8 +29,33 @@ public class UserMealsUtil {
     }
 
     public static List<UserMealWithExceed>  getFilteredMealsWithExceeded(List<UserMeal> mealList, LocalTime startTime, LocalTime endTime, int caloriesPerDay) {
-        // TODO return filtered list with correctly exceeded field
-        System.out.println("TODO return filtered list with correctly exceeded field");
-        return null;
+        List<UserMealWithExceed>    mealWithExceeds     = new ArrayList<>();
+        Map<LocalDate, Integer>     totalCaloriesPerDay = new HashMap<>();
+        LocalDate                   thisDay;
+
+        //init map
+        for(UserMeal userMeal : mealList){
+            thisDay = userMeal.getDateTime().toLocalDate();
+            totalCaloriesPerDay.merge(thisDay, userMeal.getCalories(), (a,b)->a+b);
+        }
+
+        LocalTime           thisTime;
+        UserMealWithExceed  tmpMealWithExceeds;
+        Boolean             exceedCaloriesPerDay;
+
+        for (UserMeal userMeal : mealList) {
+            thisTime = userMeal.getDateTime().toLocalTime();
+
+            if(TimeUtil.isBetween(thisTime, startTime, endTime)) {
+                exceedCaloriesPerDay = totalCaloriesPerDay.get(userMeal.getDateTime().toLocalDate()) > caloriesPerDay;
+                tmpMealWithExceeds = new UserMealWithExceed(    userMeal.getDateTime()
+                                                                , userMeal.getDescription()
+                                                                , userMeal.getCalories()
+                                                                , exceedCaloriesPerDay
+                );
+                mealWithExceeds.add(tmpMealWithExceeds);
+            }
+        }
+        return mealWithExceeds;
     }
 }
