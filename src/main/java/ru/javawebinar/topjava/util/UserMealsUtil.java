@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * GKislin
@@ -24,6 +25,7 @@ public class UserMealsUtil {
                 new UserMeal(LocalDateTime.of(2015, Month.MAY, 31, 20, 0), "Ужин", 510)
         );
         getFilteredMealsWithExceeded(mealList, LocalTime.of(7, 0), LocalTime.of(12, 0), 2000);
+        getFilteredMealsWithExceededStream(mealList, LocalTime.of(7, 0), LocalTime.of(12, 0), 2000);
 //        .toLocalDate();
 //        .toLocalTime();
     }
@@ -39,13 +41,30 @@ public class UserMealsUtil {
         for (UserMeal userMeal : mealList) {
 
             if (TimeUtil.isBetween(userMeal.getDateTime().toLocalTime(), startTime, endTime)) {
-                mealWithExceeds.add(new UserMealWithExceed(userMeal.getDateTime()
-                        , userMeal.getDescription()
-                        , userMeal.getCalories()
-                        , totalCaloriesPerDay.get(userMeal.getDateTime().toLocalDate()) > caloriesPerDay
+                mealWithExceeds.add(new UserMealWithExceed(userMeal.getDateTime(),
+                        userMeal.getDescription(),
+                        userMeal.getCalories(),
+                        totalCaloriesPerDay.get(userMeal.getDateTime().toLocalDate()) > caloriesPerDay
                 ));
             }
         }
         return mealWithExceeds;
+    }
+
+    public static List<UserMealWithExceed> getFilteredMealsWithExceededStream(List<UserMeal> mealList, LocalTime startTime, LocalTime endTime, int caloriesPerDay) {
+
+        Map<LocalDate, Integer> totalCaloriesPerDay = mealList
+                .stream()
+                .collect(Collectors.groupingBy(time -> time.getDateTime().toLocalDate(),
+                        Collectors.summingInt(UserMeal::getCalories)));
+
+        return mealList
+                .stream()
+                .filter(time -> TimeUtil.isBetween(time.getDateTime().toLocalTime(), startTime, endTime))
+                .map(userMeal -> new UserMealWithExceed(userMeal.getDateTime(),
+                        userMeal.getDescription(),
+                        userMeal.getCalories(),
+                        totalCaloriesPerDay.get(userMeal.getDateTime().toLocalDate()) > caloriesPerDay))
+                .collect(Collectors.toList());
     }
 }
